@@ -193,7 +193,7 @@ Matrix operator/(const Matrix& m, double num)
 
 ostream& operator<<(ostream& os, const Matrix& m)
 {
-    for (int i = 0; i < m.rows; ++i) {
+    for (int i = 0; i < m.rows; i++) {
         os << m.values[i][0];
         for (int j = 1; j < m.cols; ++j) {
             os << " " << m.values[i][j];
@@ -206,7 +206,7 @@ ostream& operator<<(ostream& os, const Matrix& m)
 
 istream& operator>>(istream& is, Matrix& m)
 {
-    for (int i = 0; i < m.rows; ++i) {
+    for (int i = 0; i < m.rows; i++) {
         for (int j = 0; j < m.cols; ++j) {
             is >> m.values[i][j];
         }
@@ -225,22 +225,85 @@ void Matrix::print(){
     cout<<endl;
 }
 
+bool Matrix::is_square(){
+    return rows == cols;
+}
+
+Matrix Matrix::Triangular(){
+    Matrix tr_m = *this;
+    for (int b = 0; b<rows-1; b++){
+        for (int i = b+1; i<rows; i++){
+            if (tr_m[b][b] == 0){
+                cout<<"Mathematical Error";
+                exit(0);
+            }
+            float f = tr_m[i][b]/tr_m[b][b];
+            for (int j = 0; j<cols; j++){
+                // cout<<value[i][j]<<"  "<<values[]<<"\n";
+                tr_m[i][j]-=tr_m[b][j]*f;
+            }
+        }
+    }
+    return tr_m;
+}
+
+float* Matrix::GaussianElimination(){
+    // Check size
+    
+    if (rows+1 != cols){
+        cout<<"Not apropriate size, matrix should have size - (n, n+1)\n";
+        exit(0);
+    }
+    float x[rows];
+    Matrix tr_m = this->Triangular();
+    // Find solutions:
+    if (tr_m[rows-1][cols-2] == 0){
+        cout<<"Mathematical Error";
+        exit(0);
+    }
+
+    x[rows-1] = tr_m[rows-1][cols-1]/tr_m[rows-1][cols-2];
+
+    for(int i=rows-2;i>=0;i--)
+    {
+        x[i] = tr_m[i][cols-1];
+        for(int j=i+1;j<cols;j++)
+        {
+            x[i] = x[i] - tr_m[i][j]*x[j];
+        }
+
+        if (tr_m[i][i] == 0){
+            cout<<"Mathematical Error";
+            exit(0);
+        }    
+        x[i] = x[i]/tr_m[i][i];
+    }
+    return x;
+}
 
 
 int main(){
-    Matrix matrix(4, 3);
-    // values.cols = 5;
-    // cout<<values.cols;
+    Matrix matrix(3, 4);
     matrix+=3;
     matrix[0][1] = 5;
+    matrix[1][2] = 7;
+    // matrix[][]
     Matrix m2 = ~matrix;
     matrix+=4*matrix;
     matrix /= 4;
+    cout<<"\nOrig: ";
     matrix.print();
+    cout<<"\nGaussian: ";
+    matrix.GaussianElimination();
     matrix *= m2;
+    cout<<"\nMultiplied:";
     matrix.print();
-    Matrix a(2,2);
+    // cout<<matrix;
+    // Matrix a(2,2);
+    // cin>>a;
+    // cout<<a;
+    int a;
     cin>>a;
-    cout<<a;
+    cout<<float(00)/a;
     return 0;
 }

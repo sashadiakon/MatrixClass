@@ -29,8 +29,12 @@ class Matrix {
         friend istream& operator>>(istream&, Matrix&);
 
         void print();
+        bool is_square();
+        float* GaussianElimination();
+        
+        Matrix Triangular();
 
-
+        
     private:
         vector<vector<float>> values;
         int rows, cols;
