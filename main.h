@@ -14,6 +14,7 @@ class Matrix {
         Matrix(int, int);
         Matrix(int);
         Matrix(const Matrix&);
+        Matrix(vector <float>);
 
         vector<float>& operator[](int index);
 
@@ -36,13 +37,16 @@ class Matrix {
         bool is_square();
         bool is_diag();
         void Identity();
+        Matrix Inverse();
+        Matrix getCofactor(int n, int p, int q);
+        float Minor(int n, int i, int j);
+        float Det(int n);
         vector<float> GaussianElimination();
         pair<int, int> nondiag();
         Matrix Triangular();
-        void Rotate(int k, int l, int i, int j);
-        
         vector<float> JacobiAlg(float eps);
         void RandomSymetric(float min, float max);
+
     private:
         int rows, cols;
         vector<vector<float>> values;
@@ -60,5 +64,7 @@ Matrix operator*(const Matrix&, const Matrix&);
 Matrix operator*(const Matrix&, double);
 Matrix operator*(double, const Matrix&);
 Matrix operator/(const Matrix&, double);
+
+
 
 #endif

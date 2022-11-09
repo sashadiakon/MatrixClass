@@ -2,14 +2,16 @@
 
 
 
-float get_rand(float min, float max){
+int get_rand(int min = 0, int max = 10){
     return min + rand()%int(max-min);
 }
 
-int sign(double a) {
-    if (a > 0) return 1;
-    if (a < 0) return -1;
-    return 0;
+float rand_float(int min = 0, int max = 7001, int m = 7001){
+    return float(get_rand(0, 7001))/7001;
+}
+
+float rand_diviation(int min = 0, int max = 7001, int m = 7001){
+    return rand_float(min, max, m)-0.5;
 }
 
 Matrix::Matrix(int r, int c){
@@ -29,6 +31,11 @@ Matrix::Matrix(const Matrix& m){
     cols = m.cols;
 }
 
+Matrix::Matrix(vector <float> m){
+    values = vector<vector<float>>(1, m);
+    rows = 1;
+    cols = m.size();
+}
 int Matrix::getRows(){
     return rows;
 }
@@ -252,6 +259,7 @@ void Matrix::print(){
     cout<<endl;
 }
 
+
 bool Matrix::is_diag(){
     bool res = true;
     for (int i = 0; i < rows; i++) {
@@ -265,10 +273,10 @@ bool Matrix::is_diag(){
 }
 
 bool Matrix::is_square(){
-    
     return rows == cols;
 }
 
+// Calculate triangular form for matrix
 Matrix Matrix::Triangular(){
     Matrix tr_m = *this;
     for (int b = 0; b<rows-1; b++){
@@ -279,7 +287,6 @@ Matrix Matrix::Triangular(){
             }
             float f = tr_m[i][b]/tr_m[b][b];
             for (int j = 0; j<cols; j++){
-                // cout<<value[i][j]<<"  "<<values[]<<"\n";
                 tr_m[i][j]-=tr_m[b][j]*f;
             }
         }
@@ -287,6 +294,75 @@ Matrix Matrix::Triangular(){
     return tr_m;
 }
 
+// return Cofactor of the matrix 
+Matrix Matrix::getCofactor(int n, int p, int q)
+{
+    int i = 0, j = 0;
+    Matrix temp(rows, rows);
+    // Looping for each element of the matrix
+    for (int row = 0; row < n; row++)
+    {
+        for (int col = 0; col < n; col++)
+        {
+            //  Copying into temporary matrix only those
+            //  element which are not in given row and
+            //  column
+            if (row != p && col != q)
+            {
+                temp[i][j++] = values[row][col];
+ 
+                // Row is filled, so increase row index and
+                // reset col index
+                if (j == n - 1)
+                {
+                    j = 0;
+                    i++;
+                }
+            }
+        }
+    }
+    return temp;
+}
+
+// Calculate Minor
+float Matrix::Minor(int n, int i, int j){
+    return this->getCofactor(n, i, j).Det(n-1); 
+}
+
+// Calculate Determinant
+float Matrix::Det(int n){
+    if (not this->is_square()){
+        cout<<"We cannot calculate it for non square matrix";
+        exit(0);
+    }
+    float D = 0;
+    if (n == 1){
+        return values[0][0];
+    }
+    for (int i =0; i< n; i++){
+        D += pow(-1, i)*values[0][i]*Minor(n, 0, i);
+    }
+    return D;
+}
+
+// Calc inverse matrix
+Matrix Matrix::Inverse(){
+    if (not this->is_square()){
+        cout<<"We cannot calculate it for non square matrix";
+        exit(0);
+    }
+    Matrix inv(rows, cols);
+    float det = this->Det(rows);
+    for (int i =0; i<rows; i++){
+        for(int j=0; j<cols; j++){
+            inv[i][j] = pow(-1, i+j)*Minor(rows, i, j);
+        }
+    }
+    inv /= det;
+    return inv;
+}
+
+// Gaussian elimination
 vector<float> Matrix::GaussianElimination(){
     // Check size
     
@@ -337,14 +413,13 @@ pair<int, int> Matrix::nondiag(){
     return ij;
 }
 
-void Matrix::Rotate(int k, int l, int i, int j) {   
-    cout<<1;
-}
-
-
+// find eigenvalues with Jacobi method
 vector<float> Matrix::JacobiAlg(float eps =0.01) {
+    if (not this->is_square()){
+        cout<<"We cannot calculate it for non square matrix";
+        exit(0);
+    }
     int i, j, p, q, flag;
-    
     float theta, t;
     t = INFINITY;
     Matrix A = *this;
@@ -379,8 +454,6 @@ vector<float> Matrix::JacobiAlg(float eps =0.01) {
                 }
             }
         }
-        // cout<<"U: \n"<<U<<endl;
-        // cout<<"A:\n"<<A<<endl;
     }
     vector<float> res;
     for (i = 0; i<rows; i++){
@@ -389,7 +462,12 @@ vector<float> Matrix::JacobiAlg(float eps =0.01) {
     return res;
 }
 
+// transform matrix to symetric matrix with random coefs
 void Matrix::RandomSymetric(float min = 0, float max = 100){
+    if (not this->is_square()){
+        cout<<"We cannot calculate it for non square matrix";
+        exit(0);
+    }
     for (int i = 0; i < rows; i++){
         for (int j = 0; j<i; j++){
             values[i][j] = values[j][i];
@@ -399,6 +477,47 @@ void Matrix::RandomSymetric(float min = 0, float max = 100){
         }
     }
 }
+
+// generate random coefficients for linear function
+vector <float> GenerateLinearFunc(int n = 1, int min = -100, int max = 100){
+    vector <float> coefs;
+    for (int i = 0; i <= n; i++){
+        coefs.push_back(get_rand(min, max));
+    }
+    return coefs;
+    
+}
+
+// func to generate data for linear function with small deviation from real values
+auto TrainDataGenerator(vector <float> func, int n_samples = 30){
+    Matrix coef(func);
+    coef = ~coef;
+    Matrix X(n_samples, func.size());
+    Matrix y(n_samples, 1);
+    for (int i =0; i<n_samples; i++){
+        for(int x = 0; x<func.size();x++){
+            if (x == 0){
+                X[i][x] = 1;
+            }
+            else{
+                X[i][x] = get_rand(-100, 100);
+            }
+        }
+        float div = rand_diviation();
+        y[i][0] = (Matrix(X[i])*coef)[0][0]+div;
+    }
+    auto data = make_pair(X, y);
+    data.first = X;
+    data.second = y;
+    return data;
+}
+
+// Use LeastSquares method to approximate the linear func coefs
+Matrix LeastSquares(Matrix X_train, Matrix Y_train){
+    Matrix weights = (~X_train*X_train).Inverse()*~X_train*Y_train;
+    return weights;
+}
+
 
 int main(){
     // Set seed for random gen
@@ -410,14 +529,15 @@ int main(){
     matrix[2] = vector<float> {0, -1, 2, -1};
     matrix[3] = vector<float> {0,0,-1, 2};
     vector<float> eigenvalues = matrix.JacobiAlg(0.1);
+    cout<<"Jakobi algorithm tests: \n";
     for (float x: eigenvalues){
         cout<<x<<" ";
     }
 
     // Test for random 5x5 matrix
-    Matrix m(5,5);
+    Matrix m(3,3);
     m.RandomSymetric();
-    cout<<m;
+    cout<<endl<<m;
     vector<float> eigenvalues2 = m.JacobiAlg(0.1);
     for (float x: eigenvalues2){
         cout<<x<<" ";
@@ -427,10 +547,35 @@ int main(){
     Matrix m2(3,4);
     m2+=3;
     m2[0][1] +=4; m2[1][3] += 2; m2[2][0] = 7;
-    cout<<"\nGaussian: ";
+    cout<<"\nGaussian: \n";
     vector<float> xs = m2.GaussianElimination();
     for (int i =0; i < m2.getRows(); i++){
         cout<<xs[i]<<" ";
+    }
+
+    // Test of linear regresion 
+    cout<<"\nLinearReg:\n";
+    vector <float> func = GenerateLinearFunc(3);
+    auto data = TrainDataGenerator(func);
+    Matrix x_train = data.first;
+    Matrix y_train = data.second;
+    cout<<"Real func: f= "<<func[0];
+    for (int i = 1; i < func.size(); i++){
+        if (func[i] >= 0){
+            cout<<" + ";
+        }
+        else cout<<" - ";
+        cout<<fabs(func[i])<<"x"<<i;
+    }
+    // predict function parameters
+    Matrix weights(LeastSquares(x_train, y_train));
+    cout<<"\nPredicted: \n f = "<<weights[0][0];
+    for (int i =1; i < weights.getRows(); i++){
+        if (weights[i][0] >= 0){
+            cout<<" + ";
+        }
+        else cout<<" - ";
+        cout<<fabs(weights[i][0])<<"x"<<i;
     }
     return 0;
 }
