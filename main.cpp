@@ -1,6 +1,17 @@
 #include "main.h"
 
 
+
+float get_rand(float min, float max){
+    return min + rand()%int(max-min);
+}
+
+int sign(double a) {
+    if (a > 0) return 1;
+    if (a < 0) return -1;
+    return 0;
+}
+
 Matrix::Matrix(int r, int c){
     rows = r;
     cols = c;
@@ -12,11 +23,27 @@ Matrix::Matrix(int r, int c){
     }
 }
 
-
 Matrix::Matrix(const Matrix& m){
     values = m.values;
     rows = m.rows;
     cols = m.cols;
+}
+
+int Matrix::getRows(){
+    return rows;
+}
+
+void Matrix::Identity(){
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            if (i==j){
+                values[i][j] = 1;
+            }
+            else {
+                values[i][j] = 0;
+            }
+        }
+    }
 }
 
 
@@ -225,7 +252,20 @@ void Matrix::print(){
     cout<<endl;
 }
 
+bool Matrix::is_diag(){
+    bool res = true;
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; ++j) {
+            if (i!=j){
+                res &= (values[i][j] == 0);
+            }
+        }
+    }
+    return res;
+}
+
 bool Matrix::is_square(){
+    
     return rows == cols;
 }
 
@@ -247,14 +287,14 @@ Matrix Matrix::Triangular(){
     return tr_m;
 }
 
-float* Matrix::GaussianElimination(){
+vector<float> Matrix::GaussianElimination(){
     // Check size
     
     if (rows+1 != cols){
         cout<<"Not apropriate size, matrix should have size - (n, n+1)\n";
         exit(0);
     }
-    float x[rows];
+    vector<float> x(rows,0);
     Matrix tr_m = this->Triangular();
     // Find solutions:
     if (tr_m[rows-1][cols-2] == 0){
@@ -281,29 +321,116 @@ float* Matrix::GaussianElimination(){
     return x;
 }
 
+// function to find max non diagonal element
+pair<int, int> Matrix::nondiag(){
+    float max = 0;
+    pair<int, int> ij;
+    for (int i =0; i < rows; i++){
+        for(int j = 1; j < cols; j++){
+            if ((i != j) && (fabs(values[i][j])>max)){
+                max = fabs(values[i][j]);
+                ij.first = i;
+                ij.second = j;
+            }
+        }
+    }
+    return ij;
+}
+
+void Matrix::Rotate(int k, int l, int i, int j) {   
+    cout<<1;
+}
+
+
+vector<float> Matrix::JacobiAlg(float eps =0.01) {
+    int i, j, p, q, flag;
+    
+    float theta, t;
+    t = INFINITY;
+    Matrix A = *this;
+    Matrix U(rows, rows);
+    
+    while (t>eps){
+        pair<int, int> coor = A.nondiag();
+        i = coor.first;
+        j = coor.second;
+        if (A[i][i] == A[j][j]){
+            if (A[i][j]> 0){
+                theta = M_PI/4;
+            }
+            else{
+                theta = -M_PI/4;
+            }
+        }
+        else{
+            theta = 0.5*atan(2*A[i][j]/(A[i][i]-A[j][j]));
+        }
+        U.Identity();
+        U[i][i] = cos(theta);
+        U[j][j] = cos(theta);
+        U[i][j] = sin(theta);
+        U[j][i] = -sin(theta);
+        A = U*A*~U;
+        t = 0;
+        for (int i =0; i < rows; i++){
+            for(int j = 0; j < cols; j++){
+                if (i!=j){
+                    t+= A[i][j]*A[i][j];
+                }
+            }
+        }
+        // cout<<"U: \n"<<U<<endl;
+        // cout<<"A:\n"<<A<<endl;
+    }
+    vector<float> res;
+    for (i = 0; i<rows; i++){
+        res.push_back(A[i][i]); 
+    }
+    return res;
+}
+
+void Matrix::RandomSymetric(float min = 0, float max = 100){
+    for (int i = 0; i < rows; i++){
+        for (int j = 0; j<i; j++){
+            values[i][j] = values[j][i];
+        }
+        for (int j = i; j < cols; j++){
+            values[i][j] = get_rand(min, max);
+        }
+    }
+}
 
 int main(){
-    Matrix matrix(3, 4);
-    matrix+=3;
-    matrix[0][1] = 5;
-    matrix[1][2] = 7;
-    // matrix[][]
-    Matrix m2 = ~matrix;
-    matrix+=4*matrix;
-    matrix /= 4;
-    cout<<"\nOrig: ";
-    matrix.print();
+    // Set seed for random gen
+    srand((unsigned) time(NULL));
+
+    Matrix matrix(4, 4);
+    matrix[0] = vector<float> {2,-1,0,0};
+    matrix[1] = vector<float> {-1, 2, -1, 0};
+    matrix[2] = vector<float> {0, -1, 2, -1};
+    matrix[3] = vector<float> {0,0,-1, 2};
+    vector<float> eigenvalues = matrix.JacobiAlg(0.1);
+    for (float x: eigenvalues){
+        cout<<x<<" ";
+    }
+
+    // Test for random 5x5 matrix
+    Matrix m(5,5);
+    m.RandomSymetric();
+    cout<<m;
+    vector<float> eigenvalues2 = m.JacobiAlg(0.1);
+    for (float x: eigenvalues2){
+        cout<<x<<" ";
+    }
+
+    // Test of GaussianElimination
+    Matrix m2(3,4);
+    m2+=3;
+    m2[0][1] +=4; m2[1][3] += 2; m2[2][0] = 7;
     cout<<"\nGaussian: ";
-    matrix.GaussianElimination();
-    matrix *= m2;
-    cout<<"\nMultiplied:";
-    matrix.print();
-    // cout<<matrix;
-    // Matrix a(2,2);
-    // cin>>a;
-    // cout<<a;
-    int a;
-    cin>>a;
-    cout<<float(00)/a;
+    vector<float> xs = m2.GaussianElimination();
+    for (int i =0; i < m2.getRows(); i++){
+        cout<<xs[i]<<" ";
+    }
     return 0;
 }

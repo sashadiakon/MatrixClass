@@ -3,11 +3,14 @@
 
 #include <iostream>
 #include <vector>
+#include <cmath>
+#include<cstdlib>
 
 using namespace std;
 
 class Matrix {
     public:
+    
         Matrix(int, int);
         Matrix(int);
         Matrix(const Matrix&);
@@ -29,15 +32,21 @@ class Matrix {
         friend istream& operator>>(istream&, Matrix&);
 
         void print();
+        int getRows();
         bool is_square();
-        float* GaussianElimination();
-        
+        bool is_diag();
+        void Identity();
+        vector<float> GaussianElimination();
+        pair<int, int> nondiag();
         Matrix Triangular();
-
+        void Rotate(int k, int l, int i, int j);
         
+        vector<float> JacobiAlg(float eps);
+        void RandomSymetric(float min, float max);
     private:
-        vector<vector<float>> values;
         int rows, cols;
+        vector<vector<float>> values;
+        
 
 };
 
